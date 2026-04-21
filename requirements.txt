@@ -1,0 +1,10 @@
+flask>=3.0.0
+flask-cors>=4.0.0
+oracledb>=2.0.0
+datasets>=2.14.0
+pandas>=2.0.0
+psycopg2-binary>=2.9.0
+python-dotenv>=1.0.0
+supabase>=2.0.0
+# Legacy driver (optional):
+# cx_Oracle>=8.3.0

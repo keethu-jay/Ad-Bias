@@ -1,0 +1,14 @@
+QueryID,Task,BPlusTree_ms,PGM_Sim_ms
+1,Point_Lookup,49.83,13.92
+2,Range_Lookup,18.39,15.33
+3,Age_Group_Filter,101.83,72.8
+4,Gender_Distribution,626.26,2378.35
+5,Bias_Audit_Sample,582.9,316.4
+6,Category_Volume,151.32,146.71
+7,Demographic_Intersection,361.0,183.72
+8,CTR_by_Category,172.63,171.05
+9,Spend_by_Age_Group,190.44,190.86
+10,Temporal_Analysis,48.34,38.15
+11,Highest_Spend_Ads,18.15,132.18
+12,Regional_Bias_Audit,232.25,231.25
+13,Cross_Platform_Bias,211.14,212.13

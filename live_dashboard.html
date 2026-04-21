@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClearBias Benchmarking</title>
+  <style>
+    :root { --bg:#0f1626; --panel:#16223a; --panel2:#1d2d4a; --text:#eaf0fa; --muted:#9eb2d1; --a:#e1613b; --b:#51aeb1; --c:#f3a261; --line:#2b3d60; }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1150px;margin:0 auto;padding:20px}.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+    h1{margin:0 0 6px}.sub{margin:0 0 18px;color:var(--muted);line-height:1.45}.section{margin:18px 0 8px;color:var(--c);font-size:1rem}
+    table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left}
+    th{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
+    .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.field{display:flex;flex-direction:column;gap:4px;color:var(--muted);font-size:.82rem}
+    select,button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+    button{background:var(--b);color:#0a111f;font-weight:700;cursor:pointer;border:1px solid #3d7a7c}button:hover{filter:brightness(1.08)}button:disabled{opacity:.55;cursor:not-allowed}
+    .grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}@media(max-width:900px){.grid{grid-template-columns:1fr}}
+    .kpi{font-size:1.5rem;font-weight:700}.mini{color:var(--muted);font-size:.82rem}.status{min-height:20px;color:var(--muted);margin-top:8px}.error{color:#ff7b7b}.hidden{display:none}
+    .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--b);border-radius:50%;display:inline-block;vertical-align:middle;margin-right:6px;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .bench-scale{margin:10px 0 14px;padding:8px 0 4px;border-bottom:1px solid var(--line)}
+    .bench-ruler{display:flex;justify-content:space-between;align-items:flex-end;gap:6px;font-size:.72rem;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+    .live-chart{display:flex;flex-direction:column;gap:8px;margin:10px 0 14px}
+    .live-chart-row{display:grid;grid-template-columns:108px 1fr 76px;gap:8px;align-items:center;font-size:.82rem;color:var(--muted)}
+    .live-chart-bar{height:15px;border-radius:7px;background:#0e182b;border:1px solid var(--line);overflow:hidden}
+    .live-chart-fill-b,.live-chart-fill-p{height:100%;border-radius:6px 0 0 6px;min-width:2px}
+    .live-chart-fill-b{background:var(--b)}.live-chart-fill-p{background:var(--a)}
+    .live-delta-row{display:grid;grid-template-columns:108px 1fr minmax(0,1fr);gap:8px;align-items:center;font-size:.78rem;color:var(--muted);margin-top:2px}
+    .live-delta-bar{height:9px;border-radius:5px;background:#0e182b;border:1px solid var(--line);overflow:hidden}
+    .live-delta-fill-faster{height:100%;background:var(--b);border-radius:4px 0 0 4px;min-width:2px}
+    .live-delta-fill-slower{height:100%;background:var(--a);border-radius:4px 0 0 4px;min-width:2px}
+    .live-ms{font-family:ui-monospace,Consolas,monospace;color:var(--text);font-size:.8rem;text-align:right}
+    .bench-block{display:grid;grid-template-columns:52px 1fr;gap:10px 12px;align-items:start;margin:12px 0;padding-bottom:10px;border-bottom:1px solid rgba(43,61,96,.55)}
+    .bench-block:last-child{border-bottom:none}
+    .bench-task{grid-column:1/-1;margin-top:4px}
+    .bench-q{font-weight:700;color:var(--c);font-size:.85rem}
+    .bench-rows{display:flex;flex-direction:column;gap:6px}
+    .bench-metric{display:grid;grid-template-columns:44px 1fr 72px;gap:8px;align-items:center;font-size:.78rem;color:var(--muted)}
+    .bench-track{height:12px;border-radius:6px;background:#0e182b;border:1px solid var(--line);overflow:hidden}
+    .bench-fill-b{height:100%;background:var(--b);border-radius:5px 0 0 5px}
+    .bench-fill-p{height:100%;background:var(--a);border-radius:5px 0 0 5px}
+    .bench-ms{text-align:right;font-family:ui-monospace,Consolas,monospace;color:var(--text);font-size:.78rem}
+    .legend{font-size:.8rem;color:var(--muted);margin-top:8px}
+    .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 6px 0 10px}.visual{width:100%;border-radius:10px;border:1px solid var(--line);background:#0b1424}
+    .mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+    .card code{font-size:.85em;background:rgba(234,240,250,.12);color:var(--text);padding:2px 6px;border-radius:6px;border:1px solid rgba(234,240,250,.2)}
+    #visual-card{background:#e8edf4;border-color:#aeb8c9;color:#121a26}
+    #visual-card .section{color:#1d355c;margin-bottom:8px}
+    #visual-card .mini{color:#2c3a4d;line-height:1.45}
+    #visual-card .visual{background:#fff;border-color:#cfd6e3;box-shadow:0 1px 3px rgba(15,22,38,.08)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>ClearBias</h1>
+    <p class="sub">Benchmarking project to compare search strategies on large ad datasets and see which methods answer complex bias-related queries more efficiently at scale.</p>
+
+    <h2 class="section">13 Audit Queries</h2>
+    <div class="card"><table><thead><tr><th>ID</th><th>Purpose</th></tr></thead><tbody id="catalog"></tbody></table></div>
+
+    <h2 class="section">Databricks Benchmark Snapshot</h2>
+    <div class="card">
+      <div class="mini">Notebook export: B+ vs PGM sim — same ms scale per query (wider = slower).</div>
+      <div id="notebook-chart"></div>
+      <div class="legend"><span class="dot" style="background:#51aeb1"></span>B+ Tree <span class="dot" style="background:#e1613b"></span>PGM Sim</div>
+    </div>
+
+    <h2 class="section">Run Live Audit (Supabase)</h2>
+    <div class="card">
+      <div class="controls">
+        <label class="field">Query<select id="query-select"></select></label>
+        <button id="run-btn">Run Audit</button>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+
+    <div id="live-card" class="card hidden">
+      <h2 class="section" style="margin-top:0">Live Supabase</h2>
+      <div id="live-chart" class="live-chart" aria-label="Latency comparison"></div>
+      <div class="mini">Peak memory (Python tracer)</div>
+      <div id="mem" class="kpi" style="margin-top:4px">—</div>
+    </div>
+
+    <div id="visual-card" class="card hidden">
+      <h2 class="section" style="margin-top:0">Query Visual</h2>
+      <div class="mini" id="visual-caption"></div>
+      <img id="query-visual" class="visual" alt="Query visual" />
+    </div>
+
+    <h2 class="section">Result Set</h2>
+    <div class="card"><table><thead><tr><th>Ad ID</th><th>Bias Score</th><th>Category</th><th>Region</th><th>Timestamp</th></tr></thead><tbody id="rows"></tbody></table></div>
+  </div>
+
+  <script>
+    (function () {
+      const QUERIES=[{id:"Q1",title:"Point lookup"},{id:"Q2",title:"Range on impression_id"},{id:"Q3",title:"Filter by age group"},{id:"Q4",title:"Filter by gender"},{id:"Q5",title:"Multi-dimensional modal slice"},{id:"Q6",title:"Count by category"},{id:"Q7",title:"Count by demographic intersection"},{id:"Q8",title:"CTR by category"},{id:"Q9",title:"Average spend by demographic slice"},{id:"Q10",title:"Time-range filter"},{id:"Q11",title:"Highest spend filter"},{id:"Q12",title:"Regional bias filter"},{id:"Q13",title:"Cross-platform / full bias audit"}];
+      const VIS={Q1:"A_performance_benchmark.png",Q2:"A_performance_benchmark.png",Q3:"C_age_gender_intersection.png",Q4:"B_gender_distribution.png",Q5:"Q5_bias_sample_density.png",Q6:"D_category_volume.png",Q7:"C_age_gender_intersection.png",Q8:"E_ctr_by_industry.png",Q9:"F_spend_allocation.png",Q10:"I_temporal_delivery_pattern.png",Q11:"J_highest_spend_outliers.png",Q12:"G_regional_bias_heatmap.png",Q13:"H_platform_bias.png"};
+      const sel=document.getElementById("query-select"),cat=document.getElementById("catalog"),rows=document.getElementById("rows"),status=document.getElementById("status"),btn=document.getElementById("run-btn");
+      const live=document.getElementById("live-card"),chartEl=document.getElementById("live-chart"),mem=document.getElementById("mem");
+      const vCard=document.getElementById("visual-card"),vImg=document.getElementById("query-visual"),vCap=document.getElementById("visual-caption");
+      const esc=(v)=>{const d=document.createElement("div");d.textContent=v==null?"":String(v);return d.innerHTML;};
+      QUERIES.forEach(q=>{const o=document.createElement("option");o.value=q.id;o.textContent=q.id+" — "+q.title;sel.appendChild(o);const tr=document.createElement("tr");tr.innerHTML="<td class='mono'>"+q.id+"</td><td>"+esc(q.title)+"</td>";cat.appendChild(tr);});
+      async function post(p){const r=await fetch("/run-query",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||"Request failed");return d;}
+      function renderRows(data){rows.innerHTML="";if(!data||!data.length){const tr=document.createElement("tr");tr.innerHTML="<td colspan='5' class='mini'>No rows</td>";rows.appendChild(tr);return;}data.slice(0,500).forEach(r=>{const tr=document.createElement("tr");tr.innerHTML="<td class='mono'>"+esc(r.ad_id)+"</td><td class='mono'>"+esc(r.bias_score)+"</td><td>"+esc(r.category)+"</td><td>"+esc(r.region)+"</td><td class='mono'>"+esc(r.timestamp)+"</td>";rows.appendChild(tr);});}
+      function renderLiveLatencyChart(bMs,pMs){
+        const maxLat=Math.max(bMs,pMs,.001);
+        const d=pMs-bMs;
+        const absPct=Math.min(100,(Math.abs(d)/maxLat)*100);
+        chartEl.innerHTML="";
+        function row(label,ms,fillCls){
+          const pct=(ms/maxLat)*100;
+          const w=document.createElement("div");
+          w.className="live-chart-row";
+          w.innerHTML="<div>"+label+"</div><div class='live-chart-bar'><div class='"+fillCls+"' style='width:"+pct.toFixed(1)+"%'></div></div><div class='live-ms'>"+ms.toFixed(2)+" ms</div>";
+          chartEl.appendChild(w);
+        }
+        row("B+ tree",bMs,"live-chart-fill-b");
+        row("BRIN / PGM-style",pMs,"live-chart-fill-p");
+        const dw=document.createElement("div");
+        dw.className="live-delta-row";
+        const sign=d>0?"+":"";
+        const faster=d===0?"same":d<0?"BRIN path faster":"B+ faster";
+        const fillCls=d<=0?"live-delta-fill-faster":"live-delta-fill-slower";
+        dw.innerHTML="<div>|Δ|</div><div class='live-delta-bar'><div class='"+fillCls+"' style='width:"+absPct.toFixed(1)+"%'></div></div><div class='live-ms' style='text-align:left'>"+sign+d.toFixed(2)+" ms <span class='mini'>("+faster+")</span></div>";
+        chartEl.appendChild(dw);
+      }
+      async function run(){const qid=sel.value||"Q1";btn.disabled=true;status.classList.remove("error");status.innerHTML="<span class='spinner'></span> Running live comparison on Supabase...";
+        try{const [b,p]=await Promise.all([post({query_id:qid,mode:"B-Tree"}),post({query_id:qid,mode:"PGM"})]);renderLiveLatencyChart(b.app_latency_ms,p.app_latency_ms);mem.textContent=Math.max(b.memory_mb||0,p.memory_mb||0).toFixed(2)+" MB";live.classList.remove("hidden");renderRows(b.rows||[]);if(VIS[qid]){vImg.src="/audit-visuals/"+VIS[qid];vCap.textContent=qid+" visual mapped from generated audit assets.";vCard.classList.remove("hidden");}status.textContent="Done: "+qid+" — B+ vs BRIN (PGM-style).";}
+        catch(e){status.textContent=String(e.message||e);status.classList.add("error");}
+        finally{btn.disabled=false;}
+      }
+      async function loadBench(){
+        const host=document.getElementById("notebook-chart");
+        host.innerHTML="<div class='mini'><span class='spinner'></span>Loading notebook benchmark numbers...</div>";
+        try{
+          const r=await fetch("/api/databricks-benchmark");
+          const d=await r.json();
+          if(!r.ok||!d.ok)throw new Error(d.error||"Failed to load benchmark snapshot");
+          const arr=d.rows||[];
+          let maxMs=1;
+          arr.forEach(x=>{maxMs=Math.max(maxMs,x.bplus_ms,x.pgm_sim_ms);});
+          host.innerHTML="";
+          const scale=document.createElement("div");
+          scale.className="bench-scale";
+          const title=document.createElement("div");
+          title.className="mini";
+          title.textContent="Axis 0 → "+maxMs.toFixed(0)+" ms (max over all queries)";
+          const ruler=document.createElement("div");
+          ruler.className="bench-ruler";
+          [0,.25,.5,.75,1].forEach(t=>{
+            const el=document.createElement("span");
+            el.textContent=Math.round(maxMs*t)+" ms";
+            ruler.appendChild(el);
+          });
+          scale.appendChild(title);
+          scale.appendChild(ruler);
+          host.appendChild(scale);
+
+          function rowBar(label,ms,colorCls){
+            const pct=Math.max(0.5,(ms/maxMs)*100);
+            const wrap=document.createElement("div");
+            wrap.className="bench-metric";
+            const lab=document.createElement("div");
+            lab.textContent=label;
+            const tr=document.createElement("div");
+            tr.className="bench-track";
+            const fill=document.createElement("div");
+            fill.className=colorCls;
+            fill.style.width=pct+"%";
+            tr.appendChild(fill);
+            const num=document.createElement("div");
+            num.className="bench-ms";
+            num.textContent=ms.toFixed(2)+" ms";
+            wrap.appendChild(lab);wrap.appendChild(tr);wrap.appendChild(num);
+            return wrap;
+          }
+
+          arr.forEach(x=>{
+            const block=document.createElement("div");
+            block.className="bench-block";
+            const q=document.createElement("div");
+            q.className="bench-q mono";
+            q.textContent="Q"+x.query_id;
+            const inner=document.createElement("div");
+            inner.className="bench-rows";
+            inner.appendChild(rowBar("B+",x.bplus_ms,"bench-fill-b"));
+            inner.appendChild(rowBar("PGM",x.pgm_sim_ms,"bench-fill-p"));
+            const task=document.createElement("div");
+            task.className="mini bench-task";
+            task.textContent=x.task.replace(/_/g," ");
+            block.appendChild(q);
+            block.appendChild(inner);
+            block.appendChild(task);
+            host.appendChild(block);
+          });
+        }catch(e){host.innerHTML="<div class='error'>"+esc(e.message||e)+"</div>";}
+      }
+      btn.addEventListener("click",run);loadBench();
+    })();
+  </script>
+</body>
+</html>
