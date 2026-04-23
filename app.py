@@ -79,8 +79,6 @@ USE_POSTGRES = os.environ.get("USE_POSTGRES", "true").lower() in ("1", "true", "
 _DEFAULT_METRIC_ID = int(os.environ.get("CLEARBIAS_METRIC_ID", "1"))
 
 _MOCK_LATENCY_MS = {"B-Tree": 150, "PGM": 45}
-_MOCK_MEMORY_MB = {"B-Tree": 28.4, "PGM": 11.2}
-
 QUERY_IDS = {f"Q{i}" for i in range(1, 14)}
 
 # Legacy flat-table SQL for demos when USE_ORACLE=false timing path still references templates — unused when mock skips SQL.
@@ -375,10 +373,8 @@ def run_query():
         else:
             key = "PGM" if mode == "PGM" else "B-Tree"
             delay_s = _MOCK_LATENCY_MS[key] / 1000.0
-            mem_b = _MOCK_MEMORY_MB[key]
             result = run_validated_query_mock(
                 base_delay_s=delay_s,
-                base_memory_mb=mem_b,
                 row_factory=lambda qid=query_id: _mock_rows(qid),
                 warmup_runs=warmup_runs,
                 timed_runs=timed_runs,
@@ -400,7 +396,6 @@ def run_query():
             if result.oracle_internal_ms is None
             else round(result.oracle_internal_ms, 2),
             "latency_variance_pct": None if var is None else round(var, 2),
-            "memory_mb": round(result.peak_memory_mb, 2),
             "sql_id": result.sql_id,
             "rows": result.rows,
             "mock": result.mock,

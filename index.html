@@ -84,7 +84,6 @@
         <div><div class="mini">B+ Tree latency</div><div id="btree-lat" class="kpi">—</div></div>
         <div><div class="mini">PGM sim latency</div><div id="pgm-lat" class="kpi">—</div></div>
         <div><div class="mini">Relative speedup (B+ / PGM)</div><div id="speedup" class="kpi">—</div></div>
-        <div><div class="mini">Peak memory (Python tracer)</div><div id="mem" class="kpi">—</div></div>
       </div>
     </div>
 
@@ -129,7 +128,6 @@
       const btreeLat = document.getElementById("btree-lat");
       const pgmLat = document.getElementById("pgm-lat");
       const speedup = document.getElementById("speedup");
-      const mem = document.getElementById("mem");
       const visualCard = document.getElementById("visual-card");
       const visual = document.getElementById("query-visual");
       const visualCaption = document.getElementById("visual-caption");
@@ -171,7 +169,6 @@
           btreeLat.textContent = btree.app_latency_ms + " ms";
           pgmLat.textContent = pgm.app_latency_ms + " ms";
           speedup.textContent = (btree.app_latency_ms / Math.max(pgm.app_latency_ms, 0.0001)).toFixed(2) + "x";
-          mem.textContent = Math.max(btree.memory_mb || 0, pgm.memory_mb || 0).toFixed(2) + " MB";
           liveCard.classList.remove("hidden");
           renderRows(btree.rows || []);
           const img = VISUAL_BY_QUERY[qid];
@@ -351,10 +348,6 @@
           <div class="mini">Relative speedup (B+ / PGM)</div>
           <div id="speedup" class="kpi">—</div>
         </div>
-        <div>
-          <div class="mini">Peak memory (Python tracer)</div>
-          <div id="mem" class="kpi">—</div>
-        </div>
       </div>
     </div>
 
@@ -425,7 +418,6 @@
       const btreeLat = document.getElementById("btree-lat");
       const pgmLat = document.getElementById("pgm-lat");
       const speedup = document.getElementById("speedup");
-      const mem = document.getElementById("mem");
       const visualCard = document.getElementById("visual-card");
       const visual = document.getElementById("query-visual");
       const visualCaption = document.getElementById("visual-caption");
@@ -494,7 +486,6 @@
           pgmLat.textContent = pgm.app_latency_ms + " ms";
           const sp = (btree.app_latency_ms / Math.max(pgm.app_latency_ms, 0.0001));
           speedup.textContent = sp.toFixed(2) + "x";
-          mem.textContent = Math.max(btree.memory_mb || 0, pgm.memory_mb || 0).toFixed(2) + " MB";
           liveCard.classList.remove("hidden");
 
           renderRows(btree.rows || []);
@@ -622,7 +613,7 @@
 
     .banner {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
@@ -972,11 +963,6 @@
           </div>
         </div>
       </div>
-      <div class="card" id="card-resource">
-        <h3>Resource</h3>
-        <div class="value" id="val-memory">— MB</div>
-        <p class="hint" style="margin:0.75rem 0 0;font-size:0.8rem;color:var(--muted)">Peak Python heap delta (<code style="font-size:0.8em">tracemalloc</code>) during the timed section</p>
-      </div>
       <div class="card" id="card-static" style="grid-column:1/-1">
         <h3>Data layers</h3>
         <p class="hint" style="margin:0;font-size:0.85rem;color:var(--muted);line-height:1.5" id="architecture-blurb">
@@ -1231,7 +1217,6 @@
       const valAppLatency = document.getElementById("val-app-latency");
       const valOracleLatency = document.getElementById("val-oracle-latency");
       const valVariance = document.getElementById("val-variance");
-      const valMemory = document.getElementById("val-memory");
       const oracleHint = document.getElementById("oracle-hint");
       const rigorousEl = document.getElementById("rigorous");
       const validationTbody = document.getElementById("validation-tbody");
@@ -1382,7 +1367,6 @@
           } else {
             valVariance.textContent = "N/A";
           }
-          valMemory.textContent = data.memory_mb + " MB";
 
           if (data.data_layer === "live_postgres") {
             oracleHint.textContent =
@@ -1420,7 +1404,6 @@
           valAppLatency.textContent = "— ms";
           valOracleLatency.textContent = "— ms";
           valVariance.textContent = "—";
-          valMemory.textContent = "— MB";
         } finally {
           setLoading(false);
         }

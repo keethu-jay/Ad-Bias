@@ -1,5 +1,5 @@
 """
-High-accuracy benchmarking: app wall time vs Oracle-reported cursor time + tracemalloc peak.
+High-accuracy benchmarking: app wall time vs Oracle-reported cursor time (when Oracle path is used).
 
 Oracle: V$SQL.ELAPSED_TIME is in microseconds; we expose milliseconds as elapsed_time / 1000.
 A unique /* clearbias:<tag> */ comment makes each run’s text distinct so the new child cursor’s
@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import re
 import time
-import tracemalloc
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable
@@ -109,7 +108,6 @@ class ValidatedBenchmarkResult:
     rows: list[dict[str, Any]]
     app_latency_ms: float
     oracle_internal_ms: float | None
-    peak_memory_mb: float
     row_count: int
     sql_id: str | None = None
     per_run: list[dict[str, float | None]] = field(default_factory=list)
@@ -127,28 +125,22 @@ def _single_oracle_run(
     cursor: Any,
     sql_text: str,
     binds: dict[str, Any],
-) -> tuple[float, float | None, float, list[dict[str, Any]], str | None]:
+) -> tuple[float, float | None, list[dict[str, Any]], str | None]:
     tag = uuid.uuid4().hex[:12]
     tagged = inject_sql_tag(sql_text, tag)
 
-    tracemalloc.start()
+    t0 = time.perf_counter()
+    cursor.execute(tagged, binds)
+    rows = fetch_rows_as_dicts(cursor)
+    app_ms = (time.perf_counter() - t0) * 1000.0
+    sid = getattr(cursor, "sql_id", None)
+    diag = conn.cursor()
     try:
-        t0 = time.perf_counter()
-        cursor.execute(tagged, binds)
-        rows = fetch_rows_as_dicts(cursor)
-        app_ms = (time.perf_counter() - t0) * 1000.0
-        _current, peak = tracemalloc.get_traced_memory()
-        peak_mb = peak / 10**6
-        sid = getattr(cursor, "sql_id", None)
-        diag = conn.cursor()
-        try:
-            ora_ms, resolved_sid = oracle_elapsed_ms_from_vsql(diag, sid, tag)
-        finally:
-            diag.close()
-        out_sid = resolved_sid or sid
-        return app_ms, ora_ms, peak_mb, rows, out_sid
+        ora_ms, resolved_sid = oracle_elapsed_ms_from_vsql(diag, sid, tag)
     finally:
-        tracemalloc.stop()
+        diag.close()
+    out_sid = resolved_sid or sid
+    return app_ms, ora_ms, rows, out_sid
 
 
 def run_validated_query_oracle(
@@ -161,7 +153,7 @@ def run_validated_query_oracle(
 ) -> ValidatedBenchmarkResult:
     """
     warmup_runs: executions discarded (cold cache).
-    timed_runs: recorded executions; returned app/oracle latencies are means. Peak memory is max across recorded runs.
+    timed_runs: recorded executions; returned app/oracle latencies are means.
     """
     if timed_runs < 1:
         timed_runs = 1
@@ -177,15 +169,13 @@ def run_validated_query_oracle(
 
         app_sum = 0.0
         ora_vals: list[float] = []
-        peak_max = 0.0
         last_rows: list[dict[str, Any]] = []
         last_sid: str | None = None
         per_run: list[dict[str, float | None]] = []
 
         for _ in range(timed_runs):
-            app_ms, ora_ms, peak_mb, last_rows, last_sid = _single_oracle_run(conn, cursor, sql_text, binds)
+            app_ms, ora_ms, last_rows, last_sid = _single_oracle_run(conn, cursor, sql_text, binds)
             app_sum += app_ms
-            peak_max = max(peak_max, peak_mb)
             rec: dict[str, float | None] = {"app_latency_ms": round(app_ms, 3)}
             if ora_ms is not None:
                 ora_vals.append(ora_ms)
@@ -203,7 +193,6 @@ def run_validated_query_oracle(
             rows=last_rows,
             app_latency_ms=mean_app,
             oracle_internal_ms=mean_ora,
-            peak_memory_mb=peak_max,
             row_count=len(last_rows),
             sql_id=last_sid,
             per_run=per_run,
@@ -216,13 +205,12 @@ def run_validated_query_oracle(
 def run_validated_query_mock(
     *,
     base_delay_s: float,
-    base_memory_mb: float,
     row_factory: Callable[[], list[dict[str, Any]]],
     warmup_runs: int = 0,
     timed_runs: int = 1,
 ) -> ValidatedBenchmarkResult:
     """
-    Mock path: real wall clock + tracemalloc; Oracle internal time simulated slightly below app
+    Mock path: real wall clock sleep; Oracle internal time simulated slightly below app
     (server-side “truth”) so variance stays in a believable band for UI/report demos.
     """
     if timed_runs < 1:
@@ -230,37 +218,29 @@ def run_validated_query_mock(
     if warmup_runs < 0:
         warmup_runs = 0
 
-    def one_run() -> tuple[float, float, float, list[dict[str, Any]]]:
-        tracemalloc.start()
-        try:
-            t0 = time.perf_counter()
-            time.sleep(base_delay_s)
-            rows = row_factory()
-            app_ms = (time.perf_counter() - t0) * 1000.0
-            _c, peak = tracemalloc.get_traced_memory()
-            peak_mb = peak / 10**6
-            jitter = (uuid.uuid4().int % 500) / 10000.0
-            oracle_ms = app_ms * (0.93 + jitter)
-            if oracle_ms >= app_ms:
-                oracle_ms = app_ms * 0.92
-            return app_ms, oracle_ms, peak_mb, rows
-        finally:
-            tracemalloc.stop()
+    def one_run() -> tuple[float, float, list[dict[str, Any]]]:
+        t0 = time.perf_counter()
+        time.sleep(base_delay_s)
+        rows = row_factory()
+        app_ms = (time.perf_counter() - t0) * 1000.0
+        jitter = (uuid.uuid4().int % 500) / 10000.0
+        oracle_ms = app_ms * (0.93 + jitter)
+        if oracle_ms >= app_ms:
+            oracle_ms = app_ms * 0.92
+        return app_ms, oracle_ms, rows
 
     for _ in range(warmup_runs):
         one_run()
 
     app_sum = 0.0
     ora_vals: list[float] = []
-    peak_max = 0.0
     last_rows: list[dict[str, Any]] = []
     per_run: list[dict[str, float | None]] = []
 
     for _ in range(timed_runs):
-        app_ms, ora_ms, peak_mb, last_rows = one_run()
+        app_ms, ora_ms, last_rows = one_run()
         app_sum += app_ms
         ora_vals.append(ora_ms)
-        peak_max = max(peak_max, peak_mb)
         per_run.append(
             {
                 "app_latency_ms": round(app_ms, 3),
@@ -276,7 +256,6 @@ def run_validated_query_mock(
         rows=last_rows,
         app_latency_ms=mean_app,
         oracle_internal_ms=mean_ora,
-        peak_memory_mb=max(peak_max, base_memory_mb),
         row_count=len(last_rows),
         sql_id=None,
         per_run=per_run,
@@ -315,7 +294,7 @@ def run_validated_query_postgres(
 ) -> ValidatedBenchmarkResult:
     """
     Live Supabase path: SET LOCAL planner toggles (B+ tree vs PGM-style BRIN/bitmap proxy),
-    wall-clock around execute+fetch, tracemalloc peak.
+    wall-clock around execute+fetch.
     """
     if timed_runs < 1:
         timed_runs = 1
@@ -330,25 +309,17 @@ def run_validated_query_postgres(
             cursor.fetchall()
 
         app_sum = 0.0
-        peak_max = 0.0
         last_rows: list[dict[str, Any]] = []
         per_run: list[dict[str, float | None]] = []
 
         for _ in range(timed_runs):
-            tracemalloc.start()
-            try:
-                set_index_mode(cursor, index_mode)
-                t0 = time.perf_counter()
-                cursor.execute(sql_text, params)
-                last_rows = fetch_live_rows_as_dicts(cursor)
-                app_ms = (time.perf_counter() - t0) * 1000.0
-                _c, peak = tracemalloc.get_traced_memory()
-                peak_mb = peak / 10**6
-            finally:
-                tracemalloc.stop()
+            set_index_mode(cursor, index_mode)
+            t0 = time.perf_counter()
+            cursor.execute(sql_text, params)
+            last_rows = fetch_live_rows_as_dicts(cursor)
+            app_ms = (time.perf_counter() - t0) * 1000.0
 
             app_sum += app_ms
-            peak_max = max(peak_max, peak_mb)
             per_run.append(
                 {
                     "app_latency_ms": round(app_ms, 3),
@@ -362,7 +333,6 @@ def run_validated_query_postgres(
             rows=last_rows,
             app_latency_ms=mean_app,
             oracle_internal_ms=None,
-            peak_memory_mb=peak_max,
             row_count=len(last_rows),
             sql_id=None,
             per_run=per_run,
