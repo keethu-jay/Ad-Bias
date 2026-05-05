@@ -146,7 +146,7 @@ ARCHITECTURE = {
     },
     "databricks_notebook": {
         "name": "Databricks compute notebook",
-        "role": "Source notebook for ClearBias_Audit_Files/benchmark_performance_results.csv (dashboard snapshot chart).",
+        "role": "Portable twin: databricks/clearbias_benchmark.ipynb (repo); workspace URL below. Produces benchmark_performance_results.csv.",
         "url": _DATABRICKS_NOTEBOOK_URL,
     },
 }
