@@ -111,7 +111,7 @@ See **`etl/README.md`** for commands. Python here talks to Postgres via `postgre
 
 
 
-### `databricks/` — Spark benchmark notebook
+### `databricks/` — workspace exports
 
 
 
@@ -119,9 +119,17 @@ See **`etl/README.md`** for commands. Python here talks to Postgres via `postgre
 
 | :--- | :--- |
 
-| **`clearbias_benchmark.ipynb`** | Jupyter notebook for Databricks: times ClearBias-style Q1–Q13 in Spark SQL and writes **`benchmark_performance_results.csv`**. Submit this file with the ZIP. |
+| **`README.md`** | What belongs here vs **`ClearBias_Audit_Files/`** at repo root. |
 
-| **`tools/generate_databricks_notebook.py`** | Regenerates **`clearbias_benchmark.ipynb`** from the embedded template (optional). |
+| **`clearbias_compute.py`** | Primary **Databricks notebook export** (`.py`): live Postgres timing via `enable_indexscan` on/off, ZIP download helper — uses **`postgres_config`** env DSN (no secrets in file). |
+
+| **`clearbias_benchmark.ipynb`** | Alternate **Spark-only** timing harness (optional template). |
+
+| **`exports/`** | CSV snapshot unpacked from a workspace bundle ZIP (`final_benchmark_results.csv`, `q*.csv`, logs). |
+
+| **`tools/extract_databricks_audit_bundle.py`** | One-shot importer: unpack an export ZIP from **`audit_visuals/`**, refresh **`ClearBias_Audit_Files/`**, delete the ZIP. |
+
+| **`tools/generate_databricks_notebook.py`** | Regenerates **`clearbias_benchmark.ipynb`** from its embedded template (optional). |
 
 
 
@@ -129,7 +137,7 @@ See **`etl/README.md`** for commands. Python here talks to Postgres via `postgre
 
 
 
-[`benchmark_performance_results.csv`](ClearBias_Audit_Files/benchmark_performance_results.csv) is produced by **`databricks/clearbias_benchmark.ipynb`** (or by the [**workspace notebook**](https://dbc-23063686-87f0.cloud.databricks.com/editor/notebooks/2216068845186789?o=7474645010599702), which requires login). The CSV powers the “Databricks Benchmark Snapshot” chart in the dashboard.
+[`benchmark_performance_results.csv`](ClearBias_Audit_Files/benchmark_performance_results.csv) comes from **`databricks/clearbias_compute.py`** on Databricks (Postgres path) or from **`databricks/clearbias_benchmark.ipynb`** for Spark-only experiments; see also **`databricks/exports/`** after running **`tools/extract_databricks_audit_bundle.py`**. The [**workspace notebook**](https://dbc-23063686-87f0.cloud.databricks.com/editor/notebooks/2216068845186789?o=7474645010599702) requires login. The CSV powers the “Databricks Benchmark Snapshot” chart in the dashboard.
 
 
 
@@ -171,7 +179,7 @@ Misc: `vercel.json`, `database_architect.md`, `CLEARBIAS_POSTGRES_PIVOT.md`.
 
 
 
-Everything needed to run and grade the project lives in this repo: Python modules at the root and under **`etl/`** and **`legacy_oracle/`**, SQL under **`sql/postgres/`**, **`databricks/clearbias_benchmark.ipynb`** (Spark benchmark source), static audit CSVs under **`ClearBias_Audit_Files/`**, chart PNGs under **`audit_visuals/`**, and the dashboard HTML. **`requirements.txt`** lists Python dependencies. **`.env`** is intentionally **not** committed (secrets); copy **`.env.example`** to **`.env`** on the machine that runs the app.
+Everything needed to run and grade the project lives in this repo: Python modules at the root and under **`etl/`** and **`legacy_oracle/`**, SQL under **`sql/postgres/`**, **`databricks/clearbias_compute.py`** + **`databricks/clearbias_benchmark.ipynb`**, CSV snapshots under **`ClearBias_Audit_Files/`** and **`databricks/exports/`**, chart PNGs under **`audit_visuals/`**, and the dashboard HTML. **`requirements.txt`** lists Python dependencies. **`.env`** is intentionally **not** committed (secrets); copy **`.env.example`** to **`.env`** on the machine that runs the app. Raw **`audit_visuals/*.zip`** exports are gitignored — unpack with **`python tools/extract_databricks_audit_bundle.py`** before submitting so graders never chase stray bundles beside PNGs.
 
 
 

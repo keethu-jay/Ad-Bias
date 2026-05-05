@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 .env
 data/
+
+# Personal export bundles — extract with tools/extract_databricks_audit_bundle.py (never commit)
+audit_visuals/*.zip
