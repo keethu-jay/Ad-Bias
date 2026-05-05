@@ -33,6 +33,10 @@ CORS(app)
 _ROOT = os.path.dirname(os.path.abspath(__file__))
 _AUDIT_VISUALS_DIR = os.path.join(_ROOT, "audit_visuals")
 _DATABRICKS_BENCHMARK_CSV = os.path.join(_ROOT, "ClearBias_Audit_Files", "benchmark_performance_results.csv")
+_DATABRICKS_NOTEBOOK_URL = (
+    "https://dbc-23063686-87f0.cloud.databricks.com/editor/notebooks/2216068845186789"
+    "?o=7474645010599702"
+)
 
 QUERY_LABELS = {
     1: "Point Lookup",
@@ -140,6 +144,11 @@ ARCHITECTURE = {
         "format": "14 files: architecture manifest + 13 query CSVs; in-memory ZIP, base64 download",
         "query5_note": "Modal (densest) age × gender × ad_category slice for high-density Tableau samples",
     },
+    "databricks_notebook": {
+        "name": "Databricks compute notebook",
+        "role": "Source notebook for ClearBias_Audit_Files/benchmark_performance_results.csv (dashboard snapshot chart).",
+        "url": _DATABRICKS_NOTEBOOK_URL,
+    },
 }
 
 
@@ -228,9 +237,13 @@ def api_architecture():
 
 @app.route("/api/databricks-benchmark", methods=["GET"])
 def api_databricks_benchmark():
-    """Static benchmark numbers generated in Databricks notebook exports."""
+    """Static benchmark numbers from benchmark_performance_results.csv (exported from the Databricks notebook)."""
+    payload: dict[str, Any] = {
+        "notebook_url": _DATABRICKS_NOTEBOOK_URL,
+        "notebook_label": "Databricks benchmark notebook",
+    }
     if not os.path.isfile(_DATABRICKS_BENCHMARK_CSV):
-        return jsonify({"ok": False, "error": "benchmark_performance_results.csv not found."}), 404
+        return jsonify({**payload, "ok": False, "error": "benchmark_performance_results.csv not found.", "rows": []}), 404
     rows: list[dict[str, Any]] = []
     with open(_DATABRICKS_BENCHMARK_CSV, encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
@@ -243,7 +256,7 @@ def api_databricks_benchmark():
                     "pgm_sim_ms": float(r["PGM_Sim_ms"]),
                 }
             )
-    return jsonify({"ok": True, "rows": rows})
+    return jsonify({**payload, "ok": True, "rows": rows})
 
 
 @app.route("/api/postgres-live-compare/<int:query_num>", methods=["GET"])

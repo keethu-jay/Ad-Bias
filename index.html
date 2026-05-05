@@ -185,14 +185,28 @@
       async function loadDatabricksChart() {
         const host = document.getElementById("notebook-chart");
         host.innerHTML = "<div class='mini'><span class='spinner'></span>Loading notebook benchmark numbers...</div>";
+        let notebookUrl = "";
         try {
           const res = await fetch("/api/databricks-benchmark");
           const data = await res.json();
+          notebookUrl = data.notebook_url || "";
           if (!res.ok || !data.ok) throw new Error(data.error || "Failed to load benchmark snapshot");
           const rows = data.rows || [];
           let maxMs = 1;
           rows.forEach((r) => { maxMs = Math.max(maxMs, r.bplus_ms, r.pgm_sim_ms); });
           host.innerHTML = "";
+          if (notebookUrl) {
+            const nb = document.createElement("div");
+            nb.className = "mini";
+            nb.style.marginBottom = "0.35rem";
+            const na = document.createElement("a");
+            na.href = notebookUrl;
+            na.target = "_blank";
+            na.rel = "noopener noreferrer";
+            na.textContent = "Databricks notebook (compute source)";
+            nb.appendChild(na);
+            host.appendChild(nb);
+          }
           rows.forEach((r) => {
             const row = document.createElement("div"); row.className = "bar-row";
             const label = document.createElement("div"); label.className = "mono mini"; label.textContent = "Q" + r.query_id;
@@ -202,7 +216,23 @@
             track.appendChild(a); track.appendChild(b); row.appendChild(label); row.appendChild(track); host.appendChild(row);
           });
         } catch (e) {
-          host.innerHTML = "<div class='error'>" + esc(e.message || e) + "</div>";
+          host.innerHTML = "";
+          if (notebookUrl) {
+            const nb = document.createElement("div");
+            nb.className = "mini";
+            nb.style.marginBottom = "0.35rem";
+            const na = document.createElement("a");
+            na.href = notebookUrl;
+            na.target = "_blank";
+            na.rel = "noopener noreferrer";
+            na.textContent = "Databricks notebook (compute source)";
+            nb.appendChild(na);
+            host.appendChild(nb);
+          }
+          const err = document.createElement("div");
+          err.className = "error";
+          err.textContent = String(e.message || e);
+          host.appendChild(err);
         }
       }
 
@@ -508,14 +538,28 @@
       async function loadDatabricksChart() {
         const host = document.getElementById("notebook-chart");
         host.innerHTML = "<div class='mini'><span class='spinner'></span>Loading notebook benchmark numbers...</div>";
+        let notebookUrl = "";
         try {
           const res = await fetch("/api/databricks-benchmark");
           const data = await res.json();
+          notebookUrl = data.notebook_url || "";
           if (!res.ok || !data.ok) throw new Error(data.error || "Failed to load benchmark snapshot");
           const rows = data.rows || [];
           let maxMs = 1;
           rows.forEach((r) => { maxMs = Math.max(maxMs, r.bplus_ms, r.pgm_sim_ms); });
           host.innerHTML = "";
+          if (notebookUrl) {
+            const nb = document.createElement("div");
+            nb.className = "mini";
+            nb.style.marginBottom = "0.35rem";
+            const na = document.createElement("a");
+            na.href = notebookUrl;
+            na.target = "_blank";
+            na.rel = "noopener noreferrer";
+            na.textContent = "Databricks notebook (compute source)";
+            nb.appendChild(na);
+            host.appendChild(nb);
+          }
           rows.forEach((r) => {
             const row = document.createElement("div");
             row.className = "bar-row";
@@ -539,7 +583,23 @@
             host.appendChild(row);
           });
         } catch (e) {
-          host.innerHTML = "<div class='error'>" + esc(e.message || e) + "</div>";
+          host.innerHTML = "";
+          if (notebookUrl) {
+            const nb = document.createElement("div");
+            nb.className = "mini";
+            nb.style.marginBottom = "0.35rem";
+            const na = document.createElement("a");
+            na.href = notebookUrl;
+            na.target = "_blank";
+            na.rel = "noopener noreferrer";
+            na.textContent = "Databricks notebook (compute source)";
+            nb.appendChild(na);
+            host.appendChild(nb);
+          }
+          const err = document.createElement("div");
+          err.className = "error";
+          err.textContent = String(e.message || e);
+          host.appendChild(err);
         }
       }
 
@@ -1022,7 +1082,7 @@
         <ul>
           <li><strong>WPI:</strong> use <code>ORACLE_HOST=oracle.wpi.edu</code>, <code>ORACLE_PORT=1521</code>, <code>ORACLE_SID=ORCL</code>, <code>ORACLE_USER=…</code> — see <code>legacy_oracle/oracle_config.py</code>. Thin mode — no local Oracle install.</li>
           <li><strong>Refused on localhost:1521</strong> means nothing is listening locally — for remote school DBs, point at the school host, not <code>localhost</code>.</li>
-          <li>Local XE: start Windows services <strong>OracleServiceXE</strong> and the listener, or use SQL Developer / <code>lsnrctl start</code> if you use the full client.</li>
+          <li>Local XE: start Windows services <strong>OracleServiceXE</strong> and the listener, or use SQL Developer / <code>lsnrctl start</code> if I use the full client.</li>
           <li>Install driver: <code>pip install oracledb</code> — Thin mode does not need an Oracle Client home or <code>sqlplus</code> on PATH.</li>
           <li>Set <code>ORACLE_USER</code>, <code>ORACLE_PASSWORD</code>, <code>ORACLE_HOST</code>, <code>ORACLE_PORT</code>, <code>ORACLE_SERVICE</code> before running <code>test_connection.py</code> or the Flask app with <code>USE_ORACLE=true</code>.</li>
         </ul>
@@ -1031,7 +1091,7 @@
     </div>
 
     <h2 class="section">Validation log (this session)</h2>
-    <p style="margin:0 0 0.75rem;font-size:0.85rem;color:var(--muted)">Append-only table for your report: compare app timer vs Oracle internal time. Export via copy/paste or screenshot.</p>
+    <p style="margin:0 0 0.75rem;font-size:0.85rem;color:var(--muted)">Append-only table for my report: compare app timer vs Oracle internal time. Export via copy/paste or screenshot.</p>
     <div class="table-wrap" style="margin-bottom:1.5rem">
       <div class="table-scroll" style="max-height:220px">
         <table>
@@ -1172,6 +1232,15 @@
         })
         .then(function (arch) {
           if (!arch || !arch.live) return;
+          var dn = arch.databricks_notebook || {};
+          var dnLine =
+            dn.url && dn.role
+              ? "<br/><strong style=\"color:var(--text)\">Databricks</strong> — " +
+                escapeHtml(dn.role) +
+                " <a href=\"" +
+                escapeHtml(dn.url) +
+                "\" target=\"_blank\" rel=\"noopener noreferrer\">notebook</a>."
+              : "";
           archBlurb.innerHTML =
             "<strong style=\"color:var(--text)\">Live</strong> — " +
             escapeHtml(arch.live.role) +
@@ -1180,7 +1249,8 @@
             "<br/><strong style=\"color:var(--text)\">Static</strong> — " +
             escapeHtml(arch.static.role) +
             ". " +
-            escapeHtml(arch.static.format || "");
+            escapeHtml(arch.static.format || "") +
+            dnLine;
         })
         .catch(function () {});
 

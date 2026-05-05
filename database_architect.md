@@ -2,7 +2,7 @@
 
 **Goal:** Implement 22+ BCNF tables in Oracle for Ad Bias Auditing.
 
-**Email / instructor:** Official feedback for Prof. Kong goes through your **WPI Outlook** (same address you used in Phase 1). Use that mailbox for late progress reports and replies.
+**Email / instructor:** Official feedback for Prof. Kong goes through **my WPI Outlook** (same address I used in Phase 1). I use that mailbox for late progress reports and replies.
 
 ## Task 1: DDL Generation
 
@@ -29,5 +29,5 @@ Using the table list in the project brief, generate a complete Oracle SQL script
 
 ## After Oracle install
 
-1. Connect in **SQL Developer** (e.g. as `SYSTEM` or your app user), then **Run Script** on `legacy_oracle/schema.sql` / `legacy_oracle/ddl.sql`.
-2. Grant your app schema `SELECT` on `V_$SQL` (or equivalent) if you use validated timing from `benchmark.py`.
+1. Connect in **SQL Developer** (e.g. as `SYSTEM` or my app user), then **Run Script** on `legacy_oracle/schema.sql` / `legacy_oracle/ddl.sql`.
+2. Grant my app schema `SELECT` on `V_$SQL` (or equivalent) if I use validated timing from `benchmark.py`.

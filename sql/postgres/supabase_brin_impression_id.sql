@@ -1,7 +1,7 @@
 -- =============================================================================
 -- BRIN on impression_id — required for ClearBias live “PGM-style” timings.
 -- Same definition as sql/postgres/benchmark_schema.sql (use this file alone in Supabase
--- SQL Editor if the table already exists and you only need the index).
+-- SQL Editor when the table already exists and only this index is needed).
 -- =============================================================================
 
 CREATE INDEX IF NOT EXISTS ad_impressions_brin_impression_id_idx

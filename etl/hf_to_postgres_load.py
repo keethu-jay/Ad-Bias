@@ -5,7 +5,7 @@ Stream up to 1M rows from Hugging Face Criteo into PostgreSQL using psycopg2.exe
 Run from repo root:  python -m etl.hf_to_postgres_load  (see --help)
 
 Source default: reczoo/Criteo_x4 (Parquet; streaming works).
-Note: criteo/CriteoClickLogs is not loadable via ``datasets`` without custom parsing; use ``python -m etl.download_criteo_data`` + raw path if you need that corpus.
+Note: criteo/CriteoClickLogs is not loadable via ``datasets`` without custom parsing; I use ``python -m etl.download_criteo_data`` + a raw path when I need that corpus.
 """
 
 from __future__ import annotations

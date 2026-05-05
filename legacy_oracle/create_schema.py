@@ -7,7 +7,7 @@ Usage (from repo root):
   python -m legacy_oracle.create_schema
   python -m legacy_oracle.create_schema --drop-first   # dev only: drop ClearBias tables in safe order
 
-Does not print passwords. Log outcomes in IMPLEMENTATION_LOG.md if you use it.
+Does not print passwords. I log outcomes in IMPLEMENTATION_LOG.md when I run this.
 """
 
 from __future__ import annotations

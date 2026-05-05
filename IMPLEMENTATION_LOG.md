@@ -21,10 +21,10 @@ Scratch pad for what I actually built and why — useful when I write the report
 
 ---
 
-## 2026-04 — Remove Cursor-only docs
+## 2026-04 — Remove redundant setup markdown
 
-- **What:** Deleted **`MASTER_SETUP.md`**, **`CLEARBIAS_MASTER_INSTRUCTIONS.md`**, and **`CLEARBIAS_NEXT_STEPS.md`** — they were written for Cursor/agent workflow, not for the project itself.
-- **Why:** README + `IMPLEMENTATION_LOG` + inline comments are enough; Oracle env details stay in **`legacy_oracle/oracle_config.py`**.
+- **What:** Deleted **`MASTER_SETUP.md`**, **`CLEARBIAS_MASTER_INSTRUCTIONS.md`**, and **`CLEARBIAS_NEXT_STEPS.md`** — they duplicated README + this log + inline notes and kept drifting out of date.
+- **Why:** I rely on README + `IMPLEMENTATION_LOG` + code comments; Oracle env details stay in **`legacy_oracle/oracle_config.py`**.
 
 ---
 

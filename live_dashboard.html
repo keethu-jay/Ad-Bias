@@ -127,17 +127,31 @@
         catch(e){status.textContent=String(e.message||e);status.classList.add("error");}
         finally{btn.disabled=false;}
       }
+      function appendDatabricksNotebookLink(host,url){
+        if(!url)return;
+        const wrap=document.createElement("div");
+        wrap.className="mini";
+        wrap.style.marginBottom="0.35rem";
+        const a=document.createElement("a");
+        a.href=url;a.target="_blank";a.rel="noopener noreferrer";
+        a.textContent="Databricks notebook (compute source)";
+        wrap.appendChild(a);
+        host.appendChild(wrap);
+      }
       async function loadBench(){
         const host=document.getElementById("notebook-chart");
         host.innerHTML="<div class='mini'><span class='spinner'></span>Loading notebook benchmark numbers...</div>";
+        let notebookUrl="";
         try{
           const r=await fetch("/api/databricks-benchmark");
           const d=await r.json();
+          notebookUrl=d.notebook_url||"";
           if(!r.ok||!d.ok)throw new Error(d.error||"Failed to load benchmark snapshot");
           const arr=d.rows||[];
           let maxMs=1;
           arr.forEach(x=>{maxMs=Math.max(maxMs,x.bplus_ms,x.pgm_sim_ms);});
           host.innerHTML="";
+          appendDatabricksNotebookLink(host,notebookUrl);
           const scale=document.createElement("div");
           scale.className="bench-scale";
           const title=document.createElement("div");
@@ -191,7 +205,14 @@
             block.appendChild(task);
             host.appendChild(block);
           });
-        }catch(e){host.innerHTML="<div class='error'>"+esc(e.message||e)+"</div>";}
+        }catch(e){
+          host.innerHTML="";
+          appendDatabricksNotebookLink(host,notebookUrl);
+          const err=document.createElement("div");
+          err.className="error";
+          err.textContent=String(e.message||e);
+          host.appendChild(err);
+        }
       }
       btn.addEventListener("click",run);loadBench();
     })();

@@ -110,6 +110,15 @@ See **`etl/README.md`** for commands. Python here talks to Postgres via `postgre
 
 
 
+
+### Databricks (benchmark snapshot)
+
+
+
+[`benchmark_performance_results.csv`](ClearBias_Audit_Files/benchmark_performance_results.csv) is exported from the [**Databricks compute notebook**](https://dbc-23063686-87f0.cloud.databricks.com/editor/notebooks/2216068845186789?o=7474645010599702) (same numbers as the “Databricks Benchmark Snapshot” chart in the dashboard).
+
+
+
 ### Legacy Oracle
 
 
@@ -137,6 +146,22 @@ Misc: `vercel.json`, `database_architect.md`, `CLEARBIAS_POSTGRES_PIVOT.md`.
 - **Postgres / Supabase** — default for the live dashboard.
 
 - **`legacy_oracle/`** — enable with `USE_ORACLE=true` and `ORACLE_*` vars (`legacy_oracle/oracle_config.py`).
+
+
+
+---
+
+
+
+## Submitting (ZIP / archive)
+
+
+
+Everything needed to run and grade the project lives in this repo: Python modules at the root and under **`etl/`** and **`legacy_oracle/`**, SQL under **`sql/postgres/`**, static audit CSVs under **`ClearBias_Audit_Files/`**, chart PNGs under **`audit_visuals/`**, and the dashboard HTML. **`requirements.txt`** lists Python dependencies. **`.env`** is intentionally **not** committed (secrets); copy **`.env.example`** to **`.env`** on the machine that runs the app.
+
+
+
+From GitHub: **Code → Download ZIP**. From a clone: `git archive -o clearbias.zip HEAD` produces the same tree without `.git` if your instructions forbid including history.
 
 
 

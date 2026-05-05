@@ -1,7 +1,7 @@
 """
 High-accuracy benchmarking: app wall time vs Oracle-reported cursor time (when Oracle path is used).
 
-Oracle: V$SQL.ELAPSED_TIME is in microseconds; we expose milliseconds as elapsed_time / 1000.
+Oracle: V$SQL.ELAPSED_TIME is in microseconds; milliseconds here use elapsed_time / 1000.
 A unique /* clearbias:<tag> */ comment makes each run’s text distinct so the new child cursor’s
 stats correspond to this execution (see report caveats for shared-pool reuse).
 """
@@ -30,7 +30,7 @@ def oracle_elapsed_ms_from_vsql(
     """
     Return (elapsed_ms, sql_id) from V$SQL. ELAPSED_TIME is microseconds → divide by 1000 for ms.
 
-    Thin mode often leaves cursor.sql_id unset; we fall back to matching the injected
+    Thin mode often leaves cursor.sql_id unset; this path then matches the injected
     /* clearbias:<tag> */ hint on SQL_TEXT (and SQL_FULLTEXT when available).
     If the session cannot SELECT V$SQL, returns (None, None).
     """

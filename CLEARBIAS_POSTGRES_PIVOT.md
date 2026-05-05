@@ -2,11 +2,11 @@
 
 ## Why this pivot
 
-Initially, the project used an Oracle-first architecture. The team pivoted to a cloud-native PostgreSQL stack to remove institutional network bottlenecks and support a reliable 1,000,000-row ETL and benchmark workflow.
+Initially, I used an Oracle-first layout. I moved to a cloud-hosted PostgreSQL stack (Supabase) to get past campus network limits and run a stable 1,000,000-row ETL plus benchmark loop.
 
 ## Supabase details
 
-- Supabase API URL: `https://<project-ref>.supabase.co` (use your project from the Supabase dashboard)
+- Supabase API URL: `https://<project-ref>.supabase.co` (I take `<project-ref>` from my Supabase dashboard)
 - Required for scripts: PostgreSQL connection string (DSN), not the API URL alone.
 
 Example DSN format:
@@ -33,4 +33,4 @@ python -m pip install -r requirements.txt
 
 ## Report-ready decision note
 
-"Initially, an Oracle-based architecture was attempted. However, to ensure 1,000,000 row scalability and bypass institutional network constraints that throttled data ingestion at 20,000 rows, the project migrated to a cloud-native PostgreSQL environment. This allowed for seamless ETL streaming from Hugging Face and more accurate benchmarking of high-volume index performance."
+"I started on Oracle, but ingestion stalled around 20,000 rows on the institutional network. I switched to managed PostgreSQL, streamed one million rows from Hugging Face, and ran the 13-query benchmark there — that is the setup this repo documents."
